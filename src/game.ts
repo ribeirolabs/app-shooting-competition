@@ -282,22 +282,13 @@ function getRoundById<T extends Game>(
   return round;
 }
 
-function getPlayerById<T extends Game>(
-  game: T,
-  id: string,
-): T["players"][number] {
-  const player = game.players.find((player) => player.id === id);
-  invariant(player, `Player with id ${id} not found.`);
-  return player;
-}
-
-export function getActiveRound<T extends Game>(game: T): T["rounds"][number] {
+function getActiveRound<T extends Game>(game: T): T["rounds"][number] {
   const round = game.rounds[game.activeRound];
   invariant(round, `Round ${game.activeRound} not found.`);
   return round;
 }
 
-export function getActivePlayer<T extends Game>(game: T): T["players"][number] {
+function getActivePlayer<T extends Game>(game: T): T["players"][number] {
   const round = getActiveRound(game);
 
   const playerId = round.order[round.activePlayer];
