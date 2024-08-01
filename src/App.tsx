@@ -1,13 +1,6 @@
 import { twMerge } from "tailwind-merge";
 import { atom, PrimitiveAtom, useAtom, useAtomValue } from "jotai";
-import {
-  ChangeEvent,
-  FormEvent,
-  Fragment,
-  ReactNode,
-  useEffect,
-  useState,
-} from "react";
+import { ChangeEvent, FormEvent, Fragment, useEffect, useState } from "react";
 import {
   gameAtom,
   usePlayers,
@@ -22,7 +15,7 @@ import { Provider, useSetAtom } from "jotai/react";
 
 const store = createStore();
 
-function Root({ children }: { children: ReactNode }) {
+function Root() {
   return (
     <Provider store={store}>
       <App />
@@ -62,6 +55,8 @@ const playersAtom = atom([atom(emptyPlayer())]);
 function PlayersForm() {
   const send = useSetAtom(gameAtom);
   const [playersAtoms, setPlayersAtoms] = useAtom(playersAtom);
+  const [attempts, setAttempts] = useState(5);
+  const [bestOf, setBestOf] = useState(3);
 
   function addPlayer() {
     setPlayersAtoms((players) => players.concat(atom(emptyPlayer())));
@@ -70,11 +65,42 @@ function PlayersForm() {
   function confirm(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const players = playersAtoms.map((player) => store.get(player));
-    send({ type: "start", players });
+    send({ type: "start", players, attempts, bestOf });
+  }
+
+  function updateAttempts(e: ChangeEvent<HTMLInputElement>) {
+    setAttempts(e.target.valueAsNumber);
+  }
+
+  function updateBestOf(e: ChangeEvent<HTMLInputElement>) {
+    setBestOf(e.target.valueAsNumber);
   }
 
   return (
     <form className="p-2 space-y-4" onSubmit={confirm}>
+      <div className="flex gap-4 rounded-xl">
+        <label className="flex-[2]">
+          <div className="font-bold">Attempts</div>
+          <input
+            type="number"
+            className="p-2 rounded"
+            value={Number.isNaN(attempts) ? "" : attempts}
+            onChange={updateAttempts}
+          />
+        </label>
+        <label className="flex-1">
+          <div className="font-bold">Best of</div>
+          <input
+            type="number"
+            className="p-2 rounded"
+            value={Number.isNaN(bestOf) ? "" : bestOf}
+            onChange={updateBestOf}
+          />
+        </label>
+      </div>
+
+      <div className="h-[1px] border-b" />
+
       {playersAtoms.map((playerAtom) => (
         <PlayerForm key={playerAtom.toString()} playerAtom={playerAtom} />
       ))}

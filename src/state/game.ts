@@ -34,34 +34,6 @@ export type Game = {
   activeRound: number;
 };
 
-const player1: Player = {
-  id: getId(),
-  name: "Igor",
-  percentage: 70,
-  controlled: true,
-};
-
-const player2: Player = {
-  id: getId(),
-  name: "Vinicius",
-  percentage: 60,
-  controlled: false,
-};
-
-const rounds: Round[] = [
-  {
-    id: getId(),
-    name: "Round #1",
-    order: [player2.id, player1.id],
-    attempts: {
-      [player1.id]: new Array(5).fill(null),
-      [player2.id]: new Array(5).fill(null),
-    },
-    activePlayer: 0,
-    winner: null,
-  },
-];
-
 export const GAME: Game = {
   id: getId(),
   winner: null,
@@ -79,6 +51,8 @@ type Action =
   | {
       type: "start";
       players: Player[];
+      attempts: number;
+      bestOf: number;
     };
 
 function randomMake(percentage: number): boolean {
@@ -146,6 +120,8 @@ export function gameReducer(state: Game, action: Action): Game {
   if (action.type === "start") {
     const next = produce(state, (game) => {
       game.players = action.players;
+      game.attempts = action.attempts;
+      game.bestOf = action.bestOf;
       createNextRound(game);
     });
 
