@@ -1,0 +1,121 @@
+import { act, Fragment } from "react";
+import { twMerge } from "tailwind-merge";
+import { gameAtom, getActivePlayer, getActiveRound } from "./game";
+import { useAtom } from "jotai";
+import { invariant } from "./utils/invariant";
+
+function App() {
+  const [game, send] = useAtom(gameAtom);
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-4 flex-1">
+        <h1 className="text-3xl font-bold">Players</h1>
+
+        <div className="grid grid-cols-[auto_1fr]">
+          {game.rounds.map((round) => (
+            <Fragment key={round.id}>
+              <div className="col-span-2 p-2 font-bold bg-zinc-800">
+                {round.name}
+              </div>
+
+              {round.order.map((playerId) => {
+                const player = game.players.find(
+                  (player) => player.id === playerId,
+                );
+
+                if (!player) {
+                  throw new Error(
+                    `Invalid game, player ${playerId} not found.`,
+                  );
+                }
+
+                const makes = round.makes[player.id];
+
+                return (
+                  <Fragment key={player.id}>
+                    <div className="p-2 border-b flex items-start justify-center flex-col">
+                      <div className="font-bold">{player.name}</div>
+                      <div>{player.percentage}%</div>
+                    </div>
+                    <div className="flex border-b items-center">
+                      {makes.map((attempt, idx) => (
+                        <div key={idx} className="py-2 px-1">
+                          <div
+                            className={twMerge(
+                              "w-8 h-8 rounded-full",
+                              attempt === null
+                                ? "bg-gray-300"
+                                : attempt
+                                  ? "bg-green-400"
+                                  : "bg-red-400",
+                            )}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </Fragment>
+                );
+              })}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+
+      <Toolbar />
+    </div>
+  );
+}
+
+function Toolbar() {
+  const [game, send] = useAtom(gameAtom);
+
+  const round = getActiveRound(game);
+  const player = getActivePlayer(game);
+
+  const makes = round.makes[player.id];
+
+  return (
+    <div className="p-4 min-h-24 bg-zinc-600 text-center">
+      <div className="flex justify-between font-bold text-2xl">
+        <div>{round.name}</div>
+        <div>{player.name}</div>
+      </div>
+
+      {player.main ? (
+        <div className="flex gap-4 w-full justify-center">
+          <button
+            className="bg-green-300 text-green-950 text-lg px-4 py-3 rounded-full font-bold tracking-wide disabled:opacity-50 disabled:pointer-events-none"
+            disabled={
+              makes.filter((make) => make != null).length === makes.length
+            }
+            onClick={() => send({ type: "simulate" })}
+          >
+            Make
+          </button>
+          <button
+            className="bg-red-400 text-red-950 text-lg px-4 py-3 rounded-full font-bold tracking-wide disabled:opacity-50 disabled:pointer-events-none"
+            disabled={
+              makes.filter((make) => make != null).length === makes.length
+            }
+            onClick={() => send({ type: "simulate" })}
+          >
+            Miss
+          </button>
+        </div>
+      ) : (
+        <button
+          className="bg-blue-600 text-lg px-4 py-3 rounded-full font-bold tracking-wide disabled:opacity-50 disabled:pointer-events-none"
+          disabled={
+            makes.filter((make) => make != null).length === makes.length
+          }
+          onClick={() => send({ type: "simulate" })}
+        >
+          Simulate
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default App;

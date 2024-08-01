@@ -5,5 +5,16 @@
 @layer base {
   html {
     font-family: sans-serif;
+    @apply bg-zinc-900 text-zinc-50;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  * {
+    @apply border-zinc-700;
   }
 }
