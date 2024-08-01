@@ -1,21 +1,21 @@
 import { produce, WritableDraft } from "immer";
 import { atomWithReducer, selectAtom } from "jotai/utils";
-import { invariant } from "./utils/invariant";
 import { useAtomValue } from "jotai";
 import { useMemo } from "react";
+import { invariant } from "../utils/invariant";
 
 function getId() {
   return window.crypto.randomUUID();
 }
 
-type Player = {
+export type Player = {
   id: string;
   name: string;
   percentage: number;
-  main: boolean;
+  controlled: boolean;
 };
 
-type Round = {
+export type Round = {
   id: string;
   name: string;
   order: string[];
@@ -24,7 +24,7 @@ type Round = {
   winner: string | null;
 };
 
-type Game = {
+export type Game = {
   id: string;
   players: Player[];
   rounds: Round[];
@@ -38,14 +38,14 @@ const player1: Player = {
   id: getId(),
   name: "Igor",
   percentage: 70,
-  main: true,
+  controlled: true,
 };
 
 const player2: Player = {
   id: getId(),
   name: "Vinicius",
   percentage: 60,
-  main: false,
+  controlled: false,
 };
 
 const rounds: Round[] = [
@@ -65,16 +65,21 @@ const rounds: Round[] = [
 export const GAME: Game = {
   id: getId(),
   winner: null,
-  players: [player1, player2],
-  rounds,
+  players: [],
+  rounds: [],
   bestOf: 3,
   attempts: 5,
   activeRound: 0,
 };
 
-type Action = {
-  type: "simulate" | "make" | "miss";
-};
+type Action =
+  | {
+      type: "simulate" | "make" | "miss";
+    }
+  | {
+      type: "start";
+      players: Player[];
+    };
 
 function randomMake(percentage: number): boolean {
   const random = Math.round(Math.random() * 100);
@@ -87,7 +92,7 @@ export function gameReducer(state: Game, action: Action): Game {
       const round = getActiveRound(game);
       const player = getActivePlayer(game);
 
-      if (player.main) {
+      if (player.controlled) {
         return;
       }
 
@@ -114,7 +119,7 @@ export function gameReducer(state: Game, action: Action): Game {
       const round = getActiveRound(game);
       const player = getActivePlayer(game);
 
-      if (!player.main) {
+      if (!player.controlled) {
         return;
       }
 
@@ -136,6 +141,17 @@ export function gameReducer(state: Game, action: Action): Game {
         endRound(game);
       }
     });
+  }
+
+  if (action.type === "start") {
+    const next = produce(state, (game) => {
+      game.players = action.players;
+      createNextRound(game);
+    });
+
+    console.log(next);
+
+    return next;
   }
 
   return state;
@@ -170,7 +186,10 @@ function checkWinners(game: WritableDraft<Game>): string[] {
 }
 
 function createNextRound(game: WritableDraft<Game>): void {
-  const lastRound = game.rounds[game.rounds.length - 1];
+  const order =
+    game.rounds.length > 0
+      ? [...game.rounds[game.rounds.length - 1].order].reverse()
+      : game.players.map((player) => player.id);
 
   game.activeRound = game.rounds.length;
 
@@ -178,7 +197,7 @@ function createNextRound(game: WritableDraft<Game>): void {
     id: getId(),
     winner: null,
     name: `Round #${game.rounds.length + 1}`,
-    order: [...lastRound.order].reverse(),
+    order,
     activePlayer: 0,
     attempts: game.players.reduce(
       (all, player) => {

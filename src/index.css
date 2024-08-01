@@ -17,4 +17,8 @@
   * {
     @apply border-zinc-700;
   }
+
+  input {
+    @apply bg-white/5 w-full;
+  }
 }
